@@ -25,9 +25,18 @@ func main() {
 	ic := cri.NewImageServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
 	image := &cri.ImageSpec{Image: "docker.io/alpine:latest"}
 
-	resp, err := ic.PullImage(ctx, &cri.PullImageRequest{Image: image, Auth: nil})
+	resp, err := ic.PullImage(ctx, &cri.PullImageRequest{Image: image})
+	if err != nil {
+		fmt.Printf("Error making pull image request: %v\n", err)
+		return
+	}
+	fmt.Printf("Image pulled: %v\n", resp)
+
+	image = &cri.ImageSpec{Image: "docker.io/hello-world"}
+	resp, err = ic.PullImage(ctx, &cri.PullImageRequest{Image: image})
 	if err != nil {
 		fmt.Printf("Error making pull image request: %v\n", err)
 		return

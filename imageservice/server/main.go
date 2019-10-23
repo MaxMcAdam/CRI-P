@@ -11,12 +11,6 @@ import (
 	"google.golang.org/grpc"
 	"net"
 	"os"
-
-	_ "github.com/containers/libpod/pkg/spec"
-
-	_ "syscall"
-
-	_ "github.com/containers/libpod/pkg/namespaces"
 )
 
 const (
@@ -25,19 +19,11 @@ const (
 
 var rtime *libpod.Runtime
 
-type server struct {
-	cri.UnimplementedRuntimeServiceServer
-}
-
 type imageServer struct {
-	cri.UnimplementedImageServiceServer
+	cri.ImageServiceServer
 }
 
-func (s *server) StartContainer(ctx context.Context, in *cri.StartContainerRequest) (*cri.StartContainerResponse, error) {
-	return nil, nil
-}
-
-func (s *server) PullImage(ctx context.Context, in *cri.PullImageRequest) (*cri.PullImageResponse, error) {
+func (s *imageServer) PullImage(ctx context.Context, in *cri.PullImageRequest) (*cri.PullImageResponse, error) {
 	pulledImage, err := rtime.ImageRuntime().New(ctx, in.Image.Image, "", "", os.Stdout, &image.DockerRegistryOptions{}, image.SigningOptions{}, nil, util.PullImageMissing)
 	if err != nil {
 		return nil, fmt.Errorf("Error pulling image: %v", err)
@@ -71,15 +57,9 @@ func main() {
 	}
 	fmt.Printf("Listening on %v\n", port)
 	s := grpc.NewServer()
-	cri.RegisterRuntimeServiceServer(s, &server{})
-	if err := s.Serve(lis); err != nil {
-		fmt.Printf("failed to serve: %v", err)
-	}
-	fmt.Printf("Runtime Service Server running\n")
 
 	cri.RegisterImageServiceServer(s, &imageServer{})
 	if err := s.Serve(lis); err != nil {
 		fmt.Printf("failed to serve: %v", err)
 	}
-	fmt.Printf("Image Service Server running\n")
 }
