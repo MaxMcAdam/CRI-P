@@ -88,6 +88,20 @@ func (s *server) StartContainer(ctx context.Context, in *cri.StartContainerReque
 	return &cri.StartContainerResponse{}, nil
 }
 
+func (s *server) StopContainer(ctx context.Context, in *cri.StopContainerRequest) (*cri.StopContainerResponse, error) {
+	ctn, err := rtime.GetContainer(in.ContainerId)
+	if err != nil {
+		return nil, err
+	}
+
+	// CRI stopcontainerrequest takes a timeout param. does libpod or implement here?
+	if err = ctn.Stop(); err != nil {
+		return nil, err
+	}
+
+	return &cri.StopContainerResponse{}, nil
+}
+
 func main() {
 	// This is required for containers storage
 	if reexec.Init() {
