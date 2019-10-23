@@ -27,7 +27,7 @@ func main() {
 	defer cancel()
 
 	// Create a container from the given image
-	image := "docker.io/hello-world"
+	image := "quay.io/libpod/alpine_nginx"
 	createContainerResp, err := c.CreateContainer(ctx, &cri.CreateContainerRequest{Config: &cri.ContainerConfig{Image: &cri.ImageSpec{Image: image}}})
 	if err != nil {
 		fmt.Printf("Error creating container: %v\n", err)
@@ -42,4 +42,12 @@ func main() {
 		return
 	}
 	fmt.Printf("Container started %v\n", startContainerResp)
+
+	// Stop the started container
+	stopContainerResp, err := c.StopContainer(ctx, &cri.StopContainerRequest{ContainerId: createContainerResp.ContainerId})
+	if err != nil {
+		fmt.Printf("Error stopping container: %v\n", err)
+		return
+	}
+	fmt.Printf("Container stopped %v\n", stopContainerResp)
 }
