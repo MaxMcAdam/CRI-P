@@ -5,6 +5,7 @@ import (
 	"fmt"
 	cri "github.com/kubernetes/kubernetes/staging/src/k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 	"google.golang.org/grpc"
+	"os"
 	"time"
 )
 
@@ -14,6 +15,10 @@ const (
 )
 
 func main() {
+	image := IMAGE
+	if len(os.Args) > 1 {
+		image = os.Args[1]
+	}
 	// Create grpc connection
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
@@ -27,8 +32,15 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	ctnrCreateRequest := cri.CreateContainerRequest{
+		Config: &cri.ContainerConfig{
+			Envs:  []*cri.KeyValue{&cri.KeyValue{Key: "HZN_ORG_ID", Value: "major-peacock-icp-cluster"}},
+			Image: &cri.ImageSpec{Image: image},
+		},
+	}
+
 	// Create a container from the given image
-	createContainerResp, err := c.CreateContainer(ctx, &cri.CreateContainerRequest{Config: &cri.ContainerConfig{Image: &cri.ImageSpec{Image: IMAGE}}})
+	createContainerResp, err := c.CreateContainer(ctx, &ctnrCreateRequest)
 	if err != nil {
 		fmt.Printf("Error creating container: %v\n", err)
 		return
@@ -44,6 +56,7 @@ func main() {
 	fmt.Printf("Container started %v\n", startContainerResp)
 
 	// Stop the started container
+
 	stopContainerResp, err := c.StopContainer(ctx, &cri.StopContainerRequest{ContainerId: createContainerResp.ContainerId})
 	if err != nil {
 		fmt.Printf("Error stopping container: %v\n", err)

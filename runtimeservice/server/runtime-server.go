@@ -9,6 +9,7 @@ import (
 	createconfig "github.com/containers/libpod/pkg/spec"
 	"github.com/containers/libpod/pkg/util"
 	"github.com/containers/storage/pkg/reexec"
+	//"github.com/docker/go-connections/nat"
 	cri "github.com/kubernetes/kubernetes/staging/src/k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 	"google.golang.org/grpc"
 	"net"
@@ -48,12 +49,15 @@ func (s *server) CreateContainer(ctx context.Context, in *cri.CreateContainerReq
 	}
 
 	cc := createconfig.CreateConfig{
-		Command:    imageData.Config.Cmd,
-		Detach:     true,
-		IDMappings: idmappings,
-		Image:      imageName,
-		ImageID:    pulledImage.ID(),
-		Network:    in.PodSandboxId,
+		Annotations: in.Config.Annotations,
+		Command:     imageData.Config.Cmd,
+		Detach:      true,
+		Env:         convertEnvVars(in.Config.Envs),
+		IDMappings:  idmappings,
+		Image:       imageName,
+		ImageID:     pulledImage.ID(),
+		//Name:        in.Config.Metadata.Name,
+		Pod:        in.PodSandboxId,
 		PodmanPath: "/usr/bin/podman",
 		StopSignal: syscall.SIGTERM,
 		WorkDir:    "/",
@@ -132,4 +136,12 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		fmt.Printf("failed to serve: %v", err)
 	}
+}
+
+func convertEnvVars(intfEnv []*cri.KeyValue) map[string]string {
+	ret := make(map[string]string)
+	for _, pair := range intfEnv {
+		ret[pair.Key] = pair.Value
+	}
+	return ret
 }

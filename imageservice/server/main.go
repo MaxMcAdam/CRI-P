@@ -23,12 +23,17 @@ type imageServer struct {
 	cri.ImageServiceServer
 }
 
+// Pull the specified image if it is not already present
 func (s *imageServer) PullImage(ctx context.Context, in *cri.PullImageRequest) (*cri.PullImageResponse, error) {
 	pulledImage, err := rtime.ImageRuntime().New(ctx, in.Image.Image, "", "", os.Stdout, &image.DockerRegistryOptions{}, image.SigningOptions{}, nil, util.PullImageMissing)
 	if err != nil {
 		return nil, fmt.Errorf("Error pulling image: %v", err)
 	}
 	return &cri.PullImageResponse{ImageRef: pulledImage.InputName}, nil
+}
+
+func (s *imageServer) PushImage() {
+	// Is this implemented by the libpod API?
 }
 
 func main() {
